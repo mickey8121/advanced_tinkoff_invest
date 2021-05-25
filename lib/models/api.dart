@@ -44,7 +44,7 @@ class Api extends ChangeNotifier {
     return _responseHandling(orders);
   }
   
-  Future<MarketInstrumentList> getAllBounds() async {
+  Future<MarketInstrumentList> getAllBonds() async {
     final bonds = await tinkoffApi.market.bonds();
     return _responseHandling(bonds);
   }
