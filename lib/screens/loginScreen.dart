@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tinkoff_invest/tinkoff_invest.dart';
+// import 'package:tinkoff_invest/tinkoff_invest.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
 
-import 'package:advanced_tinkoff_invest/screens/homeScreen.dart';
+// import 'package:advanced_tinkoff_invest/screens/homeScreen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -14,20 +14,42 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   String _userToken = '';
-  bool _isTrading = false;
+  bool _isTrading = true;
   bool _rememberToken = false;
   bool _isLoading = false;
+  SharedPreferences? _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _checkStoredToken();
+  }
+
+  Future<void> _getPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+  }
+
+  Future<void> _checkStoredToken() async {
+    await _getPrefs();
+
+    String? storedToken = _prefs!.getString('userToken');
+
+    if (storedToken != null) {
+      _userToken = storedToken;
+      _submit();
+    }
+  }
 
   void _submit() async {
-    Portfolio? portfolio;
+    if (!(_userToken is String)) return;
     
     setState(() => _isLoading = true);
 
     try {
       context.read<Api>().setInitApi(_userToken, !_isTrading);
-      portfolio = await context.read<Api>().getPortfolio();
-      print(portfolio);
     } catch (err) {
+      setState(() => _isLoading = false);
       showDialog<void>(
         context: context,
         builder: (BuildContext context) {
@@ -46,23 +68,20 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
-    setState(() => _isLoading = false);
+    // setState(() => _isLoading = false);
 
-    if (portfolio != null) {
-      if (_rememberToken) {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString('userToken', _userToken);
-      }
+    // if (portfolio != null) {
+    //   if (_rememberToken && _prefs != null) {
+    //     _prefs!.setString('userToken', _userToken);
+    //   }
 
-      print(portfolio);
+    //   print(portfolio);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(),
-        ),
-      );
-    }
+    //   Navigator.push(
+    //     context,
+    //     MaterialPageRoute(builder: (context) => HomeScreen()),
+    //   );
+    // }
   }
 
   @override
@@ -95,13 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onChanged: (String value) => setState(() { _userToken = value; }),
                         obscureText: true,
-                        enableSuggestions: false,
                         autocorrect: false,
                       ),
                       SwitchListTile(
                         title: const Text('Trading'),
                         value: _isTrading,
-                        onChanged: (bool val) => setState(() => _isTrading = val)
+                        onChanged: null
                       ),
                       SwitchListTile(
                         title: const Text('Remember Token'),

@@ -1,0 +1,27 @@
+import 'package:flutter/material.dart';
+
+class BottomNavTab extends StatefulWidget {
+  final void Function(int) onTapHandler;
+  final int tabIndex;
+
+  BottomNavTab({
+    Key? key,
+    required this.onTapHandler,
+    required this.tabIndex
+  }) : super(key: key);
+
+  @override
+  BottomNavTabState createState() => BottomNavTabState();
+}
+
+class BottomNavTabState extends State<BottomNavTab> {
+  // Function? _onTapHandler;
+  // int _tabIndex = 0;
+
+  // BottomNavTabState(this.onTapHandler, this.)
+
+  @override
+  Widget build(BuildContext context) {
+    return 
+  }
+}
