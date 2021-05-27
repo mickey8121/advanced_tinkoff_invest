@@ -4,6 +4,8 @@ import 'package:advanced_tinkoff_invest/models/api.dart';
 
 import 'package:tinkoff_invest/tinkoff_invest.dart';
 
+// import 'package:advanced_tinkoff_invest/screens/bondsScreen.dart';
+
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -75,7 +77,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               )
             ).toList() ?? [],
-          ]
+            SizedBox(height: 50),
+            Center(
+              child: TextButton(
+                onPressed: null,
+                // onPressed: () =>
+                //   Navigator.push(context, MaterialPageRoute(builder: (context) => BondsScreen())),
+                child: Text('Bonds'),
+              ),
+            )
+          ],
         )
       ),
     );
