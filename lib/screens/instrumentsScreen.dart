@@ -73,8 +73,6 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
         _loading = false;
         _instrumentLists = { ..._instrumentLists, _currentInstrumentType: currentInstrumentList.instruments };
       });
-
-      print(_instrumentLists);
     }
   }
 
@@ -107,8 +105,6 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
 
   Widget _tabView(String instrumentType) {
     final List<MarketInstrument>? currentList = _instrumentLists[instrumentType];
-
-    print(currentList);
 
     return (
       _loading
