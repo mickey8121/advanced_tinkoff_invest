@@ -32,6 +32,7 @@ dependencies:
   shared_preferences: ^2.0.5
   provider: ^5.0.0
   vibration: ^1.7.3
+  candlesticks: ^0.4.0
 
 dev_dependencies:
   flutter_test:
