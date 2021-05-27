@@ -1,5 +1,5 @@
-import 'package:advanced_tinkoff_invest/screens/bondsScreen.dart';
 import 'package:advanced_tinkoff_invest/screens/instrumentScreen.dart';
+import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
 import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
 import 'package:vibration/vibration.dart';
@@ -25,7 +25,7 @@ class InstrumentCard extends StatelessWidget {
           if (await Vibration.hasAmplitudeControl())
             Vibration.vibrate(pattern: [0, 100], intensities: [0, 50]);
 
-          Navigator.push(context, MaterialPageRoute(builder: (context) => InstrumentScreen(bondFigi: instrumentData.figi)));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => InstrumentScreen(instrument: instrumentData)));
         },
         child: Container(
           color: Colors.transparent,
