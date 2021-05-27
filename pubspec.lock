@@ -15,6 +15,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0"
+  candlesticks:
+    dependency: "direct main"
+    description:
+      name: candlesticks
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.4.0"
   characters:
     dependency: transitive
     description:
@@ -315,6 +322,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.0"
+  vibration:
+    dependency: "direct main"
+    description:
+      name: vibration
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.7.3"
+  vibration_web:
+    dependency: transitive
+    description:
+      name: vibration_web
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.6.2"
   web_socket_channel:
     dependency: transitive
     description:
