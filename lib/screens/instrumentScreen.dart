@@ -135,7 +135,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
             children: [
               CandlesticksChart(candles: _candles as List, isLoading: _loading),
               Container(
-                color: Colors.black45,
                 height: 60,
                 padding: EdgeInsets.only(top: 10),
                 child: ListView(
