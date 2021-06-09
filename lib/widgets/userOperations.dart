@@ -46,9 +46,9 @@ class _UserOperationsState extends State<UserOperations> {
     final instrumentType = '${operation['instrumentType']}'.splitPascalCase().capitalize();
     final currencySymbol = currencySymbols[operation['currency']];
     final payment = operation['payment'];
-    final figi = operation['figi'];
-    final trades = operation['trades'];
-    final title = '$type ';
+    // final figi = operation['figi'];
+    // final trades = operation['trades'];
+    // final title = '$type ';
     final instrument = operation['instrument'];
     final instrumentName = instrument?['name'];
     final icon = instrumentIcons[instrumentType];
@@ -73,14 +73,14 @@ class _UserOperationsState extends State<UserOperations> {
                     Row(
                       children: [
                         Text(
-                          instrument?['name'] != null ? '${instrument?['name']}' : type,
+                          instrumentName != null ? instrumentName : type,
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
                         ),
                         ...(icon != null ? [Icon(icon)] : []),
                       ],
                     ),
                     SizedBox(height: 2),
-                    Text(instrument?['name'] != null ? type : ''),
+                    Text(instrumentName != null ? type : ''),
                     SizedBox(height: 5),
                     SizedBox(height: 5),
                     Text(operationDate),
