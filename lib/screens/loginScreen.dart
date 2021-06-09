@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      context.read<Api>().setInitApi(_userToken, !_isTrading);
+      context.read<API>().setInitApi(_userToken, !_isTrading);
     } catch (err) {
       setState(() => _isLoading = false);
       showDialog<void>(
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 'Welcome',
-                style: TextStyle(height: 2.5, fontSize: 60, color: Color.fromARGB(200, 0, 0, 0)),
+                style: TextStyle(height: 2.5, fontSize: 60),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 60),
@@ -116,11 +116,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: true,
                         autocorrect: false,
                       ),
-                      SwitchListTile(
-                        title: const Text('Trading'),
-                        value: _isTrading,
-                        onChanged: null
-                      ),
+                      // SwitchListTile(
+                      //   title: const Text('Trading'),
+                      //   value: _isTrading,
+                      //   onChanged: null
+                      // ),
                       SwitchListTile(
                         title: const Text('Remember Token'),
                         value: _rememberToken,

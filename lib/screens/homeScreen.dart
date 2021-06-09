@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:advanced_tinkoff_invest/models/api.dart';
-
+// import 'package:yahoofin/yahoofin.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
+
+import 'package:advanced_tinkoff_invest/models/api.dart';
 
 // import 'package:advanced_tinkoff_invest/screens/bondsScreen.dart';
 
@@ -13,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _loading = true;
-  Portfolio? _portfolio;
+  Map? _portfolio;
   UserAccounts? _userAccounts;
   // List<Order>? _tinkoffOrders;
 
@@ -25,14 +26,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void initData() async {
-    _portfolio = await context.read<Api>().getPortfolio();
-    _userAccounts = await context.read<Api>().getAccounts();
+    // final yfin = YahooFin();
+
+    // StockInfo info = yfin.getStockInfo(ticker: 'AAPL');
+    
+    // var price = await yfin.getPrice(stockInfo: info);
+    // var priceChange = await yfin.getPriceChange(stockInfo: info);
+    // var volume = await yfin.getVolume(stockInfo: info);
+
+    // print(price);
+    // print(priceChange);
+    // print(volume);
+
+    _portfolio = await context.read<API>().getPortfolio();
+    _userAccounts = await context.read<API>().getAccounts();
 
     // final String tinkoffAccountId = _userAccounts?.accounts.where(
     //   (acc) => acc.brokerAccountType.name == 'tinkoff'
     // ).toList()[0].brokerAccountId as String;
 
-    // _tinkoffOrders = await context.read<Api>().getOrders(tinkoffAccountId);
+    // _tinkoffOrders = await context.read<API>().getOrders(tinkoffAccountId);
 
     setState(() { _loading = false; });
   }
@@ -64,14 +77,14 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 50),
             Text('Positions', style: Theme.of(context).textTheme.headline5),
             SizedBox(height: 10),
-            ..._portfolio?.positions.map(
+            ..._portfolio!['positions'].map(
               (item) => Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(item.name),
-                  Text('${item.ticker}'),
-                  Text('${item.balance}'),
-                  Text('${item.lots}'),
+                  Text(item['name']),
+                  Text('${item['ticker']}'),
+                  Text('${item['balance']}'),
+                  Text('${item['lots']}'),
                 ],
               )
             ).toList() ?? [],

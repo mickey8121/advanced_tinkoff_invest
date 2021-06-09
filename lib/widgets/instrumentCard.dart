@@ -6,7 +6,7 @@ import 'package:vibration/vibration.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
 
 class InstrumentCard extends StatelessWidget {
-  final MarketInstrument instrumentData;
+  final Map instrumentData;
   InstrumentCard({ Key? key, required this.instrumentData }) : super(key: key);
 
   @override
@@ -34,21 +34,21 @@ class InstrumentCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(instrumentData.ticker, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold  )),
+              Text(instrumentData['ticker'], style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold  )),
               SizedBox(height: 10),
-              Text(instrumentData.name, style: TextStyle(fontSize: 16)),
+              Text(instrumentData['name'], style: TextStyle(fontSize: 16)),
               SizedBox(height: 10),
 
               // only bonds have a faceValue
-              if (instrumentData.faceValue != null) Row(
+              if (instrumentData['faceValue'] != null) Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('Face Value:', style: TextStyle(fontSize: 16)),
                   SizedBox(width: 5),
-                  Text(instrumentData.faceValue.toString(), style: TextStyle(fontSize: 16, color: Colors.deepOrange)),
+                  Text(instrumentData['faceValue'].toString(), style: TextStyle(fontSize: 16, color: Colors.deepOrange)),
                   SizedBox(width: 1),
                   Text(
-                    currencySymbols['${instrumentData.currency?.name ?? ''}'] as String,
+                    currencySymbols['${instrumentData['currency'] ?? ''}'] as String,
                     style: TextStyle(fontSize: 16, color: Colors.deepOrange),
                   ),
                 ],
