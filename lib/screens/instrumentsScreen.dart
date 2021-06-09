@@ -2,7 +2,7 @@ import 'package:advanced_tinkoff_invest/widgets/instrumentCard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
-import 'package:tinkoff_invest/tinkoff_invest.dart';
+// import 'package:tinkoff_invest/tinkoff_invest.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
 
@@ -22,22 +22,20 @@ const List tabs = [
     'instrumentType': 'etf',
     'icon': Icons.pie_chart_rounded,
   },
+  // {
+  //   'label': 'Currencies',
+  //   'instrumentType': 'currency',
+  //   'icon': Icons.pie_chart_rounded,
+  // },
 ];
 
-// const List tabViewChildren = [
-
-// ];
-
 class InstrumentsScreen extends StatefulWidget {
-  // InstrumentsScreen({Key key}) : super(key: key);
-
   @override
   IinstrumentsScreenState createState() => IinstrumentsScreenState();
 }
 
 class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProviderStateMixin {
   TabController? _controller;
-  // int _currentTabIndex = 0;
   bool _loading = true;
   String _currentInstrumentType = tabs[0]['instrumentType'];
   Map<String, List?> _instrumentLists = {
@@ -125,7 +123,7 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
     return Scaffold(
       drawerDragStartBehavior: DragStartBehavior.down,
       appBar: AppBar(
-        toolbarHeight: 60,
+        toolbarHeight: 15,
         bottom: TabBar(
           controller: _controller,
           indicatorWeight: 0.5,
