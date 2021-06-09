@@ -154,7 +154,7 @@ class API extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> getAllOperations({ bool? noCache }) async {
-    Map<String, dynamic>? operations = getDataFromLocalStorage('operationss');
+    Map<String, dynamic>? operations = getDataFromLocalStorage('operations');
 
     if (operations == null) {
       // for real response ------------------------------------
