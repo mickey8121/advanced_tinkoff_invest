@@ -1,0 +1,1 @@
+final RegExp splitPascalCaseRegex = RegExp(r'(?=(?!^)[A-Z])');
