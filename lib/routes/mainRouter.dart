@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-
-// import 'package:advanced_tinkoff_invest/screens/loginScreen.dart';
+import 'package:advanced_tinkoff_invest/screens/profileScreen.dart';
 import 'package:advanced_tinkoff_invest/screens/homeScreen.dart';
 import 'package:advanced_tinkoff_invest/screens/instrumentsScreen.dart';
-// import 'package:advanced_tinkoff_invest/screens/bondsScreen.dart';
-// import 'package:advanced_tinkoff_invest/screens/instrumentScreen.dart';
 
 final List screens = [
   {
@@ -26,7 +23,7 @@ final List screens = [
   },
   {
     'title': 'Profile',
-    'child': HomeScreen(),
+    'child': ProfileScreen(),
     'barItem': BottomNavigationBarItem(
       icon: Icon(Icons.person_outline),
       label: 'Profile',
@@ -35,8 +32,6 @@ final List screens = [
 ];
 
 class MainRouter extends StatefulWidget {
-  // MainRouter({Key key}) : super(key: key);
-
   @override
   _MainRouterState createState() => _MainRouterState();
 }
@@ -58,7 +53,7 @@ class _MainRouterState extends State<MainRouter> {
       body: currentScreen['child'],
       bottomNavigationBar: BottomNavigationBar(
         onTap: _onTapHandler,
-        currentIndex: _tabIndex, // this will be set when a new tab is tapped
+        currentIndex: _tabIndex,
         items: _items,
       ),
     );

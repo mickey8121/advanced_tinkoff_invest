@@ -40,7 +40,7 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
   // int _currentTabIndex = 0;
   bool _loading = true;
   String _currentInstrumentType = tabs[0]['instrumentType'];
-  Map<String, List<MarketInstrument>?> _instrumentLists = {
+  Map<String, List?> _instrumentLists = {
     'stock': null,
     'bond': null,
     'etf': null,
@@ -67,11 +67,14 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
       if (!_loading) setState(() => _loading = true);
 
       final currentInstrumentList =
-        await context.read<Api>().getInstrumentsList(_currentInstrumentType);
+        await context.read<API>().getInstrumentsList(_currentInstrumentType);
 
       setState(() {
         _loading = false;
-        _instrumentLists = { ..._instrumentLists, _currentInstrumentType: currentInstrumentList.instruments };
+        _instrumentLists = {
+          ..._instrumentLists,
+          _currentInstrumentType: currentInstrumentList!['instruments']
+        };
       });
     }
   }
@@ -104,7 +107,7 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
   }
 
   Widget _tabView(String instrumentType) {
-    final List<MarketInstrument>? currentList = _instrumentLists[instrumentType];
+    final List? currentList = _instrumentLists['$instrumentType'];
 
     return (
       _loading

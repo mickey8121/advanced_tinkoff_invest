@@ -8,8 +8,6 @@ class CandlesticksChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(candles);
-
     return Container(
       height: 300.0,
       child: (

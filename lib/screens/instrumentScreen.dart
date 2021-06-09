@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
+import 'package:yahoofin/yahoofin.dart';
+import 'package:yahoofin/src/models/stockQuote.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
 
@@ -21,7 +23,7 @@ const intervals = [
 ];
 
 class InstrumentScreen extends StatefulWidget {
-  final MarketInstrument? instrument;
+  final Map? instrument;
   InstrumentScreen({ Key? key, @required this.instrument }) : super(key: key);
 
   @override
@@ -31,46 +33,61 @@ class InstrumentScreen extends StatefulWidget {
 class _InstrumentScreenState extends State<InstrumentScreen> {
   bool _loading = true;
   CandleResolution _selectedInterval = CandleResolution.oneMin;
-  Orderbook? _orderbook;
+  Map<String, dynamic>? _orderbookData;
+  // Orderbook? _orderbook;
   List<Candle>? _candles;
-  // Function? _unsubscribe;
+  StockQuote? _instrumentData;
+  Function? _unsubscribe;
 
   @override
   void initState() {
     super.initState();
-
     _initData();
   }
 
-  // @override
-  // void dispose() async {
-  //   if (_unsubscribe != null) await _unsubscribe!();
-  //   print('disposed');
-
-  //   super.dispose();
-  // }
+  @override
+  void dispose() async {
+    super.dispose();
+    if (_unsubscribe != null) await _unsubscribe!();
+  }
 
   void _initData() async {
-    // SearchMarketInstrument instrument =
-    //   await context.read<Api>().instrumentByFigi(widget.bondFigi as String);
-    Orderbook orderbook = await context.read<Api>().getOrderbook(widget.instrument?.figi as String, 10);
+    final yfin = YahooFin();
 
-    // final nowDate = DateTime.now();
-    // final fromDate = nowDate.subtract(const Duration(days: 30));
+    final figi = widget.instrument?['figi'];
+    final ticker = widget.instrument?['ticker'];
 
-    // Candles candles = await context.read<Api>().getCandles(
-    //   figi: widget.instrument?.figi as String,
-    //   from: fromDate,
-    //   to: nowDate,
-    //   interval: CandleResolution.day,
-    // );
+    StockInfo instrumentInfo = yfin.getStockInfo(ticker: ticker);
+
+    final stockHistory = yfin.initStockHistory(ticker: ticker);
+
+    print(stockHistory);
+
+    try {
+      _instrumentData = await instrumentInfo.getStockData();
+    } catch (e) {
+      print(e);
+    }
 
     await _loadCandles();
 
+    final unsubscribe = context.read<API>().subscribeToOrderbook(
+      figi,
+      10,
+      (data) => setState(
+        () {
+          _orderbookData = {
+            'event': data.event,
+            'time': data.time,
+            'payload': data.payload,
+          };
+        }
+      ),
+    );
+
     setState(() {
       _loading = false;
-      _orderbook = orderbook;
-      // _candles = candles.candles;
+      _unsubscribe = unsubscribe;
     });
   }
 
@@ -98,8 +115,8 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
 
     setState(() => _loading = true);
 
-    Candles candles = await context.read<Api>().getCandles(
-      figi: widget.instrument?.figi as String,
+    Candles candles = await context.read<API>().getCandles(
+      figi: widget.instrument?['figi'],
       from: fromDate,
       to: nowDate,
       interval: interval ?? CandleResolution.day,
@@ -107,17 +124,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
 
     setState(() { _loading = false; _candles = candles.candles; });
   }
-
-  // Future<void> _subscribe() async {
-  //   _unsubscribe = await context.read<Api>().subscribeToCandle(
-  //     widget.bondFigi as String,
-  //     StreamingCandleInterval.oneMin,
-  //     (event) {
-  //       _candle = event.payload;
-  //       print(event);
-  //     },
-  //   );
-  // }
 
   void _onTap(interval) {
     if (_selectedInterval == interval) return;
@@ -128,9 +134,14 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double? currentPrice = _instrumentData?.currentPrice;
+    final double? fiftyDaysAverageChange = _instrumentData?.fiftyDayAverageChange;
+
+    final String? regularMarketChange = (_instrumentData?.regularMarketChangePercent)!.toStringAsPrecision(3);
+
     return Container(
        child: Scaffold(
-          appBar: AppBar(title: Text(widget.instrument?.name as String)),
+          appBar: AppBar(title: Text(widget.instrument?['name'])),
           body: Column(
             children: [
               CandlesticksChart(candles: _candles as List, isLoading: _loading),
@@ -157,6 +168,42 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
                   ]
                 ),
               ),
+              _loading ? Text('Loading') : Container(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Text('Current Price:'),
+                        SizedBox(width: 20,),
+                        Text(currentPrice != null ? '$currentPrice\$' : 'unknown'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text('Regular Market Change:'),
+                        SizedBox(width: 20,),
+                        Text(regularMarketChange != null ? '$regularMarketChange%' : 'unknown'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text('50 Days Average Change:'),
+                        SizedBox(width: 20,),
+                        Text(fiftyDaysAverageChange != null ? '$fiftyDaysAverageChange\$' : 'unknown'),
+                      ],
+                    ),
+                    SizedBox(height: 30,),
+                    Row(
+                      children: _orderbookData != null ? [
+                        // Text('${_orderbookData!['time']}'),
+                        Flexible(
+                          child: Text('${_orderbookData!['payload']}'),
+                        ),
+                      ] : [],
+                    )
+                  ],
+                ),
+              )
             ],
           ),
        ),

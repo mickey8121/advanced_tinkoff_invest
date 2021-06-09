@@ -16,7 +16,7 @@ class ConditionalRouter extends StatefulWidget {
 class _ConditionalRouterState extends State<ConditionalRouter> {
   @override
   Widget build(BuildContext context) {
-    final bool _isAuthorized = context.watch<Api>().isAuthorized;
+    final bool _isAuthorized = context.watch<API>().isAuthorized;
 
     print(_isAuthorized);
 
