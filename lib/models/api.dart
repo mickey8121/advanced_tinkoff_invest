@@ -1,37 +1,67 @@
-// import 'package:async/async.dart';
 import 'package:async/async.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
+import 'package:yahoofin/yahoofin.dart';
 
 import 'package:advanced_tinkoff_invest/services/LocalStorage.dart';
 import 'package:advanced_tinkoff_invest/utils/operationsHC.dart' as operationsHC;
 
 import 'package:advanced_tinkoff_invest/models/extensions/PortfolioExtension.dart';
 import 'package:advanced_tinkoff_invest/models/extensions/MarketInstrumentListExtension.dart';
-import 'package:advanced_tinkoff_invest/models/extensions/OperationExtension.dart';
-import 'package:advanced_tinkoff_invest/models/extensions/OperationsExtension.dart';
+// import 'package:advanced_tinkoff_invest/models/extensions/OperationExtension.dart';
+// import 'package:advanced_tinkoff_invest/models/extensions/OperationsExtension.dart';
 
 class API extends ChangeNotifier {
   API() {
     _initLocalStorage();
+    _initYahooFinApi();
   }
 
   void _initLocalStorage() async {
     final sharedPreferences = await SharedPreferences.getInstance();
     this.localStorage = LocalStorage(prefs: sharedPreferences);
+
+    final savedToken = localStorage.prefs.getString('userToken');
+
+    if (savedToken != null) {
+      login(savedToken, true);
+    }
   }
 
-  TinkoffInvestApi? _api;
+  void _initYahooFinApi() {
+    _yahooFinApi = YahooFin();
+  }
+
+  late YahooFin _yahooFinApi;
+  late TinkoffInvestApi _api;
+  late LocalStorage localStorage;
   bool isAuthorized = false;
-  LocalStorage? localStorage;
 
-  TinkoffInvestApi? get tinkoffApi => _api;
+  TinkoffInvestApi get tinkoffApi => _api;
+  YahooFin? get yahooFinApi => _yahooFinApi;
 
-  void setInitApi(token, [sandboxMode = false, debug = false]) async {
-    _api = TinkoffInvestApi(token, sandboxMode: sandboxMode, debug: debug);
+  TinkoffInvestApi _initTinkoffAPI(token, [sandboxMode = false, debug = false])
+    => TinkoffInvestApi(token, sandboxMode: sandboxMode, debug: debug);
 
-    if (_api?.user != null) isAuthorized = true;
+  Future<void> login(token, [saveToken = false, sandboxMode = false, debug = false]) async {
+    TinkoffInvestApi tinkoffInvestApi = _initTinkoffAPI(token, sandboxMode, debug);
+
+    final portfolio = await tinkoffInvestApi.portfolio.load();
+
+    if (portfolio is ValueResult) {
+      if (saveToken) localStorage.prefs.setString('userToken', token);
+
+      _api = tinkoffInvestApi;
+      isAuthorized = true;
+    } else throw 'Failed authorization';
+
+    notifyListeners();
+  }
+
+  void logout() {
+    localStorage.prefs.remove('userToken');
+    isAuthorized = false;
 
     notifyListeners();
   }
@@ -56,16 +86,16 @@ class API extends ChangeNotifier {
   }
 
   // LocalStorage methods
-  Map<String, dynamic>? getDataFromLocalStorage(String key) => localStorage?.getData(key: key);
-  void setDataToLocalStorage(String key, Map data) => localStorage?.setData(key: key, data: data);
+  Map<String, dynamic>? getDataFromLocalStorage(String key) => localStorage.getData(key: key);
+  void setDataToLocalStorage(String key, Map data) => localStorage.setData(key: key, data: data);
   //
 
-  Future<Map<String, dynamic>?> getPortfolio() async {
+  Future<Map<String, dynamic>?> getPortfolio({ bool noCache = false }) async {
     // print((await tinkoffApi!.portfolio.load()).runtimeType != ErrorResult);
-    var portfolio = getDataFromLocalStorage('portfolio');
+    var portfolio = noCache ? null : getDataFromLocalStorage('portfolio');
 
     if (portfolio == null) {
-      final portfolioLoad = await tinkoffApi?.portfolio.load();
+      final portfolioLoad = await tinkoffApi.portfolio.load();
 
       try {
         final portfolioResponse = _responseHandling(portfolioLoad);
@@ -81,21 +111,24 @@ class API extends ChangeNotifier {
   }
   
   Future<UserAccounts> getAccounts() async {
-    final accounts = await tinkoffApi?.user.accounts();
+    final accounts = await tinkoffApi.user.accounts();
     return _responseHandling(accounts);
   }
   
   Future<List<Order>> getOrders(String brokerAccountId) async {
-    final orders = await tinkoffApi?.orders.load(brokerAccountId);
+    final orders = await tinkoffApi.orders.load(brokerAccountId);
     return _responseHandling(orders);
   }
 
-  Future<Map<String, dynamic>?> getInstrumentsList(String instrumentType) async {
+  Future<Map<String, dynamic>?> getInstrumentsList(
+    String instrumentType,
+    { bool noCache = false }
+  ) async {
     final localStorageKey = '${instrumentType}List';
     
-    var instrumentsList = getDataFromLocalStorage(localStorageKey);
+    var instruments = noCache ? null : getDataFromLocalStorage(localStorageKey);
 
-    if (instrumentsList == null) {
+    if (instruments == null) {
       var instrumentResponse;
 
       switch (instrumentType) {
@@ -117,51 +150,73 @@ class API extends ChangeNotifier {
 
       try {
         final response = _responseHandling(instrumentResponse);
-        instrumentsList = (response as MarketInstrumentList).toJson();
+        final portfolio = await getPortfolio(noCache: noCache);
+        final positions = portfolio?['positions'];
+        
+        instruments = (response as MarketInstrumentList).toJson();
 
-        setDataToLocalStorage(localStorageKey, instrumentsList);
+        var instrumentsList = Future.wait(List.from(instruments['instruments']).map((instr) async {
+          final activePosition = (
+            positions != null
+              ? (positions as List).firstWhere(
+                (p) => p['figi'] == instr['figi'],
+                orElse: () => null
+              )
+              : null
+          );
+
+          if (activePosition != null) instr['activePosition'] = activePosition;
+
+          return instr;
+        }).toList());
+
+        instruments['instruments'] =  await instrumentsList;
+
+        setDataToLocalStorage(localStorageKey, instruments);
       } catch (e) {
         throw e;
       }
     }
 
-    return instrumentsList;
+    return instruments;
   }
   
   Future<MarketInstrumentList> getStocks() async {
-    final stocks = await tinkoffApi?.market.stocks();
+    final stocks = await tinkoffApi.market.stocks();
     return _responseHandling(stocks);
   }
 
   Future<MarketInstrumentList> getBonds() async {
-    final bonds = await tinkoffApi?.market.bonds();
+    final bonds = await tinkoffApi.market.bonds();
     return _responseHandling(bonds);
   }
 
   Future<MarketInstrumentList> getEtfs() async {
-    final etfs = await tinkoffApi?.market.etfs();
+    final etfs = await tinkoffApi.market.etfs();
     return _responseHandling(etfs);
   }
 
   Future<MarketInstrumentList> getCurrencies() async {
-    final currencies = await tinkoffApi?.market.currencies();
+    final currencies = await tinkoffApi.market.currencies();
     return _responseHandling(currencies);
   }
 
   Future<Orderbook> getOrderbook(String figi, int depth) async {
-    final orderbook = await tinkoffApi?.market.orderbook(figi, depth);
+    final orderbook = await tinkoffApi.market.orderbook(figi, depth);
     return _responseHandling(orderbook);
   }
 
-  Future<Map<String, dynamic>?> getAllOperations({ bool? noCache }) async {
-    Map<String, dynamic>? operations = getDataFromLocalStorage('operations');
+  // TODO enable cache
+  Future<Map<String, dynamic>?> getAllOperations({ bool noCache = false }) async {
+    // Map<String, dynamic>? operations = noCache ? null : getDataFromLocalStorage('operations');
+    Map<String, dynamic>? operations;
 
     if (operations == null) {
       // for real response ------------------------------------
       // final DateTime nowDate = DateTime.now();
       // final duration = Duration(days: 10000);
       // final from = nowDate.subtract(duration);
-      // var operationsLoad = await tinkoffApi?.operations.load(from, nowDate);
+      // var operationsLoad = await tinkoffApi.operations.load(from, nowDate);
 
       final instrumentsList = {
         'Stock': await getInstrumentsList('stock'),
@@ -177,7 +232,7 @@ class API extends ChangeNotifier {
         // for real response
         // var operationsList = List.from((operationsResponse as Operations).toJson()['operations'] ?? []);
 
-        var extendedOperations =
+        final extendedOperations =
           // await Future.wait(operationsList.map((o) async { // for real response
           await Future.wait(List.from(operationsResponse['operations'] ?? []).map((o) async {
             var operation = Map.from(o); // make mutable
@@ -189,8 +244,14 @@ class API extends ChangeNotifier {
               final instruments = instrumentsList['$instrumentType'];
 
               if (instruments?['instruments'] != null) {
-                operation['instrument'] =
-                  instruments?['instruments'].firstWhere((instr) => instr['figi'] == figi);
+                final instrument = instruments?['instruments'].firstWhere((instr) => instr['figi'] == figi);
+
+                if (instrument['activePosition'] != null) {
+                  final price = await stockCurrentPrice(instrument['ticker']);
+                  instrument['activePosition']['currentPrice'] = price;
+                }
+
+                operation['instrument'] = instrument;
               }
             }
 
@@ -228,34 +289,104 @@ class API extends ChangeNotifier {
     required DateTime to,
     required CandleResolution interval,
   }) async {
-    final candles = await tinkoffApi?.market.candles(figi, from, to, interval);
+    final candles = await tinkoffApi.market.candles(figi, from, to, interval);
     return _responseHandling(candles);
   }
 
   Future<SearchMarketInstrument> instrumentByTicker(String ticker) async {
-    final instrument = await tinkoffApi?.market.searchByTicker(ticker);
+    final instrument = await tinkoffApi.market.searchByTicker(ticker);
     return _responseHandling(instrument);
   }
 
   Future<SearchMarketInstrument> instrumentByFigi(String figi) async {
-    final instrument = await tinkoffApi?.market.searchByFigi(figi);
+    final instrument = await tinkoffApi.market.searchByFigi(figi);
     return _responseHandling(instrument);
   }
 
-  dynamic subscribeToInstrumentInfo(String figi) async {
-    _api!.streaming.instrumentInfo.subscribe(
-      figi,
-      (event) => print('InstrumentInfo: ${event.payload}'),
-    );
+  Future<Function> subscribeToInstrumentInfo(String figi, listener) async {
+    _api.streaming.instrumentInfo.subscribe(figi, listener);
+
+    return () => _api.streaming.instrumentInfo.unsubscribe(figi, listener);
   }
 
   Future<Function> subscribeToCandle(String figi, StreamingCandleInterval interval, listener) async {
-    _api?.streaming.candle.subscribe(figi, interval, listener);
-    return () => _api?.streaming.candle.unsubscribe(figi, interval, listener);
+    _api.streaming.candle.subscribe(figi, interval, listener);
+    return () => _api.streaming.candle.unsubscribe(figi, interval, listener);
   }
 
   Function subscribeToOrderbook(String figi, int depth, listener) {
-    _api!.streaming.orderbook.subscribe(figi, 10, listener);
-    return () => _api?.streaming.orderbook.unsubscribe(figi, depth, listener);
+    _api.streaming.orderbook.subscribe(figi, 10, listener);
+    return () => _api.streaming.orderbook.unsubscribe(figi, depth, listener);
+  }
+
+  // YahooFin
+  // ----------------------------------------------------------------
+  // ----------------------------------------------------------------
+  // ----------------------------------------------------------------
+
+  // Future<dynamic> stockData(String ticker, { bool noCache = false }) async {
+  //   final localStorageKey = '${ticker}StockData';
+    
+  //   var stockData = noCache ? null : getDataFromLocalStorage(localStorageKey);
+
+  //   if (stockData == null) {
+  //     try {
+  //       final StockInfo instrumentInfoYFin = _yahooFinApi.getStockInfo(ticker: ticker);
+  //       final instrData = await instrumentInfoYFin.getStockData();
+
+  //       // stockData = instrData;
+  //     } catch (e) {}
+  //   }
+  // }
+
+  Future<double?> stockCurrentPrice(String ticker, { bool noCache = false }) async {
+    const exchangeIDs = {
+      'DE': 'DE',
+      'GS': 'IL',
+      'US': '',
+    };
+
+    final splitedTicker = ticker.split(new RegExp('\@'));
+    final tickerName = splitedTicker[0];
+    final exchangePrefix = splitedTicker.length > 1 ? exchangeIDs[splitedTicker[1]] : null;
+
+    final fullTickerName = '$tickerName${exchangePrefix != null ? '.$exchangePrefix' : ''}';
+
+    final localStorageKey = '${fullTickerName}StockCurrentPrice';
+    final localStorageKeyAlt = '$tickerName.MEStockCurrentPrice';
+
+    var stockData = (
+      noCache
+        ? null
+        : (
+          getDataFromLocalStorage(localStorageKey)
+          ?? getDataFromLocalStorage(localStorageKeyAlt)
+        )
+    );
+
+    if (stockData == null) {
+      try {
+        final StockInfo instrumentInfoYFin = _yahooFinApi.getStockInfo(ticker: fullTickerName);
+        final instrData = await instrumentInfoYFin.getStockData();
+
+        stockData = { 'currentPrice': instrData.currentPrice };
+        setDataToLocalStorage(localStorageKey, stockData);
+      } catch (e) {
+        // alt ticker
+        if ((e as dynamic)?.statusCode == 404) {
+          try {
+            final StockInfo instrumentInfoYFin = _yahooFinApi.getStockInfo(ticker: '$tickerName.ME');
+            final instrData = await instrumentInfoYFin.getStockData();
+
+            stockData = { 'currentPrice': instrData.currentPrice };
+            setDataToLocalStorage(localStorageKeyAlt, stockData);
+          } catch (e) {
+            throw e;
+          }
+        }
+      }
+    }
+
+    return stockData?['currentPrice'];
   }
 }
