@@ -73,7 +73,7 @@ class IncomeCard extends StatelessWidget {
                         Text(
                           '${income > 0 ? '+' : ''}$incomeString',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             color: (
                               income.isNegative
                                 ? Colors.red[300]
@@ -104,7 +104,7 @@ class IncomeCard extends StatelessWidget {
                         Text(
                           '${totalIncome > 0 ? '+' : ''}$totalIncomeString',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             color: (
                               totalIncome.isNegative
                                 ? Colors.red[200]
