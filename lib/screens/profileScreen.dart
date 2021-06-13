@@ -7,13 +7,14 @@ import 'package:advanced_tinkoff_invest/models/api.dart';
 import 'package:advanced_tinkoff_invest/widgets/userIncomes.dart';
 import 'package:advanced_tinkoff_invest/widgets/userOperations.dart';
 
+// TODO doesn't work rus lang
 final List tabs = [
   {
-    'label': 'Operations',
+    'label': 'Операции',
     'icon': Icons.history_rounded,
   },
   {
-    'label': 'Income',
+    'label': 'Доход',
     'icon': Icons.money,
   },
 ];
@@ -56,13 +57,10 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _tabItem(String label, IconData icon) {
     return Tab(
-      child: Row(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon),
-          SizedBox(width: 10),
-          Text(label),
-        ],
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [Icon(icon), Text(label)],
       )
     );
   }
@@ -72,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     return Scaffold(
       drawerDragStartBehavior: DragStartBehavior.down,
       appBar: AppBar(
-        toolbarHeight: 15,
+        toolbarHeight: 10,
         bottom: TabBar(
           controller: _controller,
           indicatorWeight: 0.5,
