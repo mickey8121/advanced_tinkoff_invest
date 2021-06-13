@@ -10,7 +10,7 @@ import 'package:advanced_tinkoff_invest/utils/operationsHC.dart' as operationsHC
 import 'package:advanced_tinkoff_invest/models/extensions/PortfolioExtension.dart';
 import 'package:advanced_tinkoff_invest/models/extensions/MarketInstrumentListExtension.dart';
 // import 'package:advanced_tinkoff_invest/models/extensions/OperationExtension.dart';
-// import 'package:advanced_tinkoff_invest/models/extensions/OperationsExtension.dart';
+import 'package:advanced_tinkoff_invest/models/extensions/OperationsExtension.dart';
 
 class API extends ChangeNotifier {
   API() {
@@ -207,38 +207,33 @@ class API extends ChangeNotifier {
   }
 
   // TODO enable cache
-  Future<Map<String, dynamic>?> getAllOperations({ bool noCache = false }) async {
-    // Map<String, dynamic>? operations = noCache ? null : getDataFromLocalStorage('operations');
-    Map<String, dynamic>? operations;
+  Future<Map<String, dynamic>?> getAllOperations({ bool noCache = true }) async {
+    Map<String, dynamic>? operations = noCache ? null : getDataFromLocalStorage('operations');
 
     if (operations == null) {
-      // for real response ------------------------------------
-      // final DateTime nowDate = DateTime.now();
-      // final duration = Duration(days: 10000);
-      // final from = nowDate.subtract(duration);
-      // var operationsLoad = await tinkoffApi.operations.load(from, nowDate);
+      final tinkoffInvestFoundationDate = DateTime(2016);
+      final nowDate = DateTime.now();
+
+      var operationsLoad =
+        await tinkoffApi.operations.load(tinkoffInvestFoundationDate, nowDate);
 
       final instrumentsList = {
-        'Stock': await getInstrumentsList('stock'),
-        'Currency': await getInstrumentsList('currency'),
-        'Bond': await getInstrumentsList('bond'),
-        'Etf': await getInstrumentsList('etf'),
+        'stock': await getInstrumentsList('stock'),
+        'currency': await getInstrumentsList('currency'),
+        'bond': await getInstrumentsList('bond'),
+        'etf': await getInstrumentsList('etf'),
       };
 
       try {
-        // var operationsResponse = _responseHandling(operationsLoad); // for real response
-        var operationsResponse = { 'operations': operationsHC.operations };
-
-        // for real response
-        // var operationsList = List.from((operationsResponse as Operations).toJson()['operations'] ?? []);
+        var operationsResponse = _responseHandling(operationsLoad);
+        var operationsList = List.from((operationsResponse as Operations).toJson()['operations'] ?? []);
 
         final extendedOperations =
-          // await Future.wait(operationsList.map((o) async { // for real response
-          await Future.wait(List.from(operationsResponse['operations'] ?? []).map((o) async {
+          await Future.wait(operationsList.map((o) async {
             var operation = Map.from(o); // make mutable
 
             final figi = operation['figi'];
-            final instrumentType = operation['instrumentType'];
+            final instrumentType = operation['instrumentType'].toLowerCase();
             
             if (figi != null && instrumentType != null) {
               final instruments = instrumentsList['$instrumentType'];
@@ -247,8 +242,8 @@ class API extends ChangeNotifier {
                 final instrument = instruments?['instruments'].firstWhere((instr) => instr['figi'] == figi);
 
                 if (instrument['activePosition'] != null) {
-                  final price = await stockCurrentPrice(instrument['ticker']);
-                  instrument['activePosition']['currentPrice'] = price;
+                  final currentPrice = await stockCurrentPrice(instrument['ticker']);
+                  instrument['activePosition']['currentPrice'] = currentPrice;
                 }
 
                 operation['instrument'] = instrument;
@@ -381,7 +376,10 @@ class API extends ChangeNotifier {
             stockData = { 'currentPrice': instrData.currentPrice };
             setDataToLocalStorage(localStorageKeyAlt, stockData);
           } catch (e) {
-            throw e;
+            // this is crutch
+            print('Error: $e. Setting up currentPrice of $tickerName as 0.0');
+            stockData = { 'currentPrice': 0.0 };
+            setDataToLocalStorage(localStorageKeyAlt, stockData);
           }
         }
       }
