@@ -7,17 +7,17 @@ import 'package:advanced_tinkoff_invest/models/api.dart';
 
 const List tabs = [
   {
-    'label': 'Stocks',
+    'label': 'Акции',
     'instrumentType': 'stock',
     'icon': Icons.bar_chart_rounded,
   },
   {
-    'label': 'Bonds',
+    'label': 'Облигации',
     'instrumentType': 'bond',
     'icon': Icons.featured_play_list_rounded,
   },
   {
-    'label': 'ETFs',
+    'label': 'Фонды',
     'instrumentType': 'etf',
     'icon': Icons.pie_chart_rounded,
   },
@@ -92,13 +92,10 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
 
   Widget _tabItem(String label, IconData icon) {
     return Tab(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon),
-          SizedBox(width: 10),
-          Text(label),
-        ],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [Icon(icon), Text(label)],
       )
     );
   }
@@ -122,7 +119,7 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
     return Scaffold(
       drawerDragStartBehavior: DragStartBehavior.down,
       appBar: AppBar(
-        toolbarHeight: 15,
+        toolbarHeight: 10,
         bottom: TabBar(
           controller: _controller,
           indicatorWeight: 0.5,
