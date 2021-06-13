@@ -54,7 +54,7 @@ class API extends ChangeNotifier {
 
       _api = tinkoffInvestApi;
       isAuthorized = true;
-    } else throw 'Failed authorization';
+    } else throw 'Ошибка Авторизации';
 
     notifyListeners();
   }
