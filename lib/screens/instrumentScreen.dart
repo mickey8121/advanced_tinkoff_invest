@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
 import 'package:yahoofin/yahoofin.dart';
+// ignore: implementation_imports
 import 'package:yahoofin/src/models/stockQuote.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
@@ -59,17 +60,13 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
 
     StockInfo instrumentInfo = yfin.getStockInfo(ticker: ticker);
 
-    final stockHistory = yfin.initStockHistory(ticker: ticker);
-
-    print(stockHistory);
-
     try {
       _instrumentData = await instrumentInfo.getStockData();
     } catch (e) {
       print(e);
     }
 
-    await _loadCandles();
+    await _loadCandles(_selectedInterval);
 
     final unsubscribe = context.read<API>().subscribeToOrderbook(
       figi,
@@ -91,10 +88,9 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
     });
   }
 
-  Future<void> _loadCandles([CandleResolution? interval]) async {
+  Future<void> _loadCandles(CandleResolution interval) async {
     Duration duration = Duration(days: 1);
 
-    if (interval != null)
     switch (interval) {
       case CandleResolution.hour:
         duration = Duration(days: 7);
@@ -119,7 +115,7 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
       figi: widget.instrument?['figi'],
       from: fromDate,
       to: nowDate,
-      interval: interval ?? CandleResolution.day,
+      interval: interval,
     );
 
     setState(() { _loading = false; _candles = candles.candles; });
@@ -137,7 +133,8 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
     final double? currentPrice = _instrumentData?.currentPrice;
     final double? fiftyDaysAverageChange = _instrumentData?.fiftyDayAverageChange;
 
-    final String? regularMarketChange = (_instrumentData?.regularMarketChangePercent)!.toStringAsPrecision(3);
+    final String? regularMarketChange =
+      _instrumentData?.regularMarketChangePercent?.toStringAsFixed(3);
 
     return Container(
        child: Scaffold(
