@@ -11,17 +11,29 @@ List calculateIncomes(List operations) {
   final List groupedOperationsList = groupedOperationsMap.map((key, value) {
     final instrument = value[0]['instrument'];
 
+    if (instrument == null)
+      return MapEntry(key, { 'instrument': instrument, 'operations': value, 'totalIncome': 0 });
+
     final activePosition = instrument['activePosition'];
 
-    double totalIncome =
+    double income =
       (value as List).fold(0.0, (double prev, o) => prev + (o?['payment'] ?? 0));
+
+    value.forEach((el) => print(el));
+
+    final fullValue = {
+      'instrument': instrument,
+      'operations': value,
+      'income': income,
+      'totalIncome': income,
+    };
 
     if (activePosition?['currentPrice'] != null && activePosition['lots'] != null) {
       final costOfActivePosition = activePosition['currentPrice'] * activePosition['lots'];
-      totalIncome += costOfActivePosition;
+      fullValue['totalIncome'] += costOfActivePosition;
     }
 
-    return MapEntry(key, { 'instrument': instrument, 'operations': value, 'totalIncome': totalIncome });
+    return MapEntry(key, fullValue);
   }).values.toList();
 
   return groupedOperationsList;
