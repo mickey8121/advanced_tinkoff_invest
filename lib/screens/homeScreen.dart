@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:yahoofin/yahoofin.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
 
-// import 'package:advanced_tinkoff_invest/screens/bondsScreen.dart';
+final snackBar = SnackBar(
+  content: Container(
+    child: Text('Cache cleared!', textAlign: TextAlign.center),
+  )
+);
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -50,6 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() { _loading = false; });
   }
 
+  _clearCache() {
+    final prefs = context.read<API>().localStorage.prefs;
+    final token = prefs.getString('userToken');
+    
+    prefs.clear();
+
+    if (token != null) prefs.setString('userToken', token);
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,12 +105,17 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(height: 50),
             Center(
               child: TextButton(
-                onPressed: null,
-                // onPressed: () =>
-                //   Navigator.push(context, MaterialPageRoute(builder: (context) => BondsScreen())),
-                child: Text('Bonds'),
+                onPressed: _clearCache,
+                child: Text('Clear cache'),
               ),
-            )
+            ),
+            SizedBox(height: 50),
+            Center(
+              child: TextButton(
+                onPressed: context.read<API>().logout,
+                child: Text('Logout'),
+              ),
+            ),
           ],
         )
       ),
