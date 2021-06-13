@@ -19,8 +19,6 @@ List calculateIncomes(List operations) {
     double income =
       (value as List).fold(0.0, (double prev, o) => prev + (o?['payment'] ?? 0));
 
-    value.forEach((el) => print(el));
-
     final fullValue = {
       'instrument': instrument,
       'operations': value,
