@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-// import 'package:tinkoff_invest/tinkoff_invest.dart';
 
 import 'package:advanced_tinkoff_invest/models/extensions/StringExtension.dart';
-
 import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
-import 'package:advanced_tinkoff_invest/models/api.dart';
 
 const instrumentIcons = {
   'Stock': Icons.bar_chart_rounded,
@@ -16,29 +12,21 @@ const instrumentIcons = {
 };
 
 class UserOperations extends StatefulWidget {
+  final List operations;
+  UserOperations({ Key? key, required this.operations }) : super(key: key);
+
   @override
-  _UserOperationsState createState() => _UserOperationsState();
+  _UserOperationsState createState() => _UserOperationsState(operations);
 }
 
 class _UserOperationsState extends State<UserOperations> {
-  bool _loading = true;
+  _UserOperationsState(this._operations);
+
   List? _operations;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    Map<String, dynamic>? operations = await context.read<API>().getAllOperations();
-
-    final operationsList = operations?['operations'];
-
-    setState(() {
-      _loading = false;
-      _operations = operationsList;
-    });
   }
 
   Widget _operationCard(Map operation) {
@@ -67,27 +55,30 @@ class _UserOperationsState extends State<UserOperations> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          instrumentName != null ? instrumentName : type,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
-                        ),
-                        ...(icon != null ? [Icon(icon)] : []),
-                      ],
-                    ),
-                    SizedBox(height: 2),
-                    Text(instrumentName != null ? type : ''),
-                    SizedBox(height: 5),
-                    SizedBox(height: 5),
-                    Text(operationDate),
-                    // SizedBox(height: 5),
-                    // Text('$figi'),
-                  ],
+                Expanded(
+                  flex: 7,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            instrumentName != null ? instrumentName : type,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)
+                          ),
+                          ...(icon != null ? [Icon(icon)] : []),
+                        ],
+                      ),
+
+                      SizedBox(height: 2),
+                      Text(instrumentName != null ? type : ''),
+                      SizedBox(height: 5),
+                      SizedBox(height: 5),
+                      Text(operationDate),
+                    ],
+                  ),
                 ),
+
                 Text(
                   paymentData,
                   style: TextStyle(
@@ -95,7 +86,20 @@ class _UserOperationsState extends State<UserOperations> {
                     fontSize: 18,
                     color: payment.isNegative ? Colors.red[700] : Colors.green[700],
                   ),
+                  textAlign: TextAlign.end,
                 ),
+                // Expanded(
+                //   flex: 3,
+                //   child: Text(
+                //     paymentData,
+                //     style: TextStyle(
+                //       fontWeight: FontWeight.bold,
+                //       fontSize: 18,
+                //       color: payment.isNegative ? Colors.red[700] : Colors.green[700],
+                //     ),
+                //     textAlign: TextAlign.end,
+                //   ),
+                // ),
               ],
             )
           ],
@@ -107,16 +111,12 @@ class _UserOperationsState extends State<UserOperations> {
   @override
   Widget build(BuildContext context) {
     return Container(
-       child: (
-         _loading
-          ? Center(child: Text('Loading', style: Theme.of(context).textTheme.headline3))
-          : Container(
-            child: ListView(
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              children: _operations?.map((o) => _operationCard(o)).toList() ?? [],
-            )
+       child: Container(
+         child: ListView(
+          padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            children: _operations?.map((o) => _operationCard(o)).toList() ?? [],
           )
-       ),
+        )
     );
   }
 }
