@@ -6,27 +6,27 @@ import 'package:advanced_tinkoff_invest/screens/instrumentsScreen.dart';
 
 final List screens = [
   {
-    'title': 'Home',
+    'title': 'Главная',
     'child': HomeScreen(),
     'barItem': BottomNavigationBarItem(
       icon: Icon(Icons.home_outlined),
-      label: 'Home',
+      label: 'Главная',
     ),
   },
   {
-    'title': 'Instruments',
+    'title': 'Каталог',
     'child': InstrumentsScreen(),
     'barItem': BottomNavigationBarItem(
       icon: Icon(Icons.list_alt_rounded),
-      label: 'Instruments',
+      label: 'Каталог',
     ),
   },
   {
-    'title': 'Profile',
+    'title': 'Профиль',
     'child': ProfileScreen(),
     'barItem': BottomNavigationBarItem(
       icon: Icon(Icons.person_outline),
-      label: 'Profile',
+      label: 'Профиль',
     ),
   },
 ];
