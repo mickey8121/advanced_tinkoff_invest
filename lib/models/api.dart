@@ -5,7 +5,6 @@ import 'package:tinkoff_invest/tinkoff_invest.dart';
 import 'package:yahoofin/yahoofin.dart';
 
 import 'package:advanced_tinkoff_invest/services/LocalStorage.dart';
-import 'package:advanced_tinkoff_invest/utils/operationsHC.dart' as operationsHC;
 
 import 'package:advanced_tinkoff_invest/models/extensions/PortfolioExtension.dart';
 import 'package:advanced_tinkoff_invest/models/extensions/MarketInstrumentListExtension.dart';
@@ -206,8 +205,7 @@ class API extends ChangeNotifier {
     return _responseHandling(orderbook);
   }
 
-  // TODO enable cache
-  Future<Map<String, dynamic>?> getAllOperations({ bool noCache = true }) async {
+  Future<Map<String, dynamic>?> getAllOperations({ bool noCache = false }) async {
     Map<String, dynamic>? operations = noCache ? null : getDataFromLocalStorage('operations');
 
     if (operations == null) {
