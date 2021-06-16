@@ -24,7 +24,7 @@ class API extends ChangeNotifier {
     final savedToken = localStorage.prefs.getString('userToken');
 
     if (savedToken != null) {
-      final sandboxMode = localStorage.prefs.getBool('sandboxMode');
+      final sandboxMode = localStorage.prefs.getBool('sandboxMode') ?? false;
       login(savedToken, true, sandboxMode);
     }
   }
@@ -304,7 +304,11 @@ class API extends ChangeNotifier {
     return () => _api.streaming.instrumentInfo.unsubscribe(figi, listener);
   }
 
-  Future<Function> subscribeToCandle(String figi, StreamingCandleInterval interval, listener) async {
+  Future<Function> subscribeToCandle({
+    required String figi,
+    required StreamingCandleInterval interval,
+    listener,
+  }) async {
     _api.streaming.candle.subscribe(figi, interval, listener);
     return () => _api.streaming.candle.unsubscribe(figi, interval, listener);
   }
