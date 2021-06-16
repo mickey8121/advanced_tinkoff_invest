@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
@@ -68,6 +69,7 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
   // late  List<Candle> _candles;
   List<KLineEntity>? _kLines = [];
   List<DepthEntity> _bids = [], _asks = [];
+  StockQuote? _stockData;
 
   @override
   void initState() {
@@ -89,12 +91,29 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
     // final figi = widget.instrument?['figi'];
     // final ticker = widget.instrument?['ticker'];
 
+    await _loadInfo();
     await _loadAsksAndBids();
     await _loadCandles(_selectedInterval);
 
     setState(() {
       _loading = false;
     });
+  }
+
+  Future<void> _loadInfo() async {
+    final yfin = YahooFin();
+
+    // final figi = widget.instrument?['figi'];
+    final ticker = widget.instrument?['ticker'];
+
+    StockInfo instrumentInfo = yfin.getStockInfo(ticker: ticker);
+
+    try {
+      StockQuote stockData = await instrumentInfo.getStockData();
+      setState(() { _stockData = stockData; });
+    } catch (e) {
+      print(e);
+    }
   }
 
   Future<void> _loadAsksAndBids() async {
@@ -239,16 +258,71 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
         child: (
           _loading
             ? CircularProgressIndicator()
-            // : DepthChart(_bids, _asks)
-            : DepthChart([DepthEntity(200, 10), DepthEntity(210, 20)], [DepthEntity(100, 1), DepthEntity(105, 5)])
+            : DepthChart(_bids, _asks)
         ),
       )
     );
   }
 
   Widget renderDesc() {
+    final viewHeight = (
+      MediaQuery.of(context).size.height
+      - AppBar().preferredSize.height
+      - MediaQuery.of(context).padding.top
+      - 47
+    );
+
     return (
-      Text('desc here')
+      Container(
+        padding: EdgeInsets.all(20),
+        constraints: BoxConstraints(minHeight: viewHeight),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Текущая цена'),
+                Text(_stockData?.currentPrice?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Дневной максимум'),
+                Text(_stockData?.dayHigh?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Дневной минимум'),
+                Text(_stockData?.dayLow?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('fiftyDayAverageChange'),
+                Text('${_stockData?.fiftyDayAverageChange ?? '-'}%')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('regularMarketChange'),
+                Text('${_stockData?.regularMarketChange ?? '-'}%')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('averageDailyVolume10Day'),
+                Text('${_stockData?.averageDailyVolume10Day ?? '-'}')
+              ],
+            ),
+          ],
+        ),
+      )
     );
   }
 
