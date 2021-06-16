@@ -1,9 +1,7 @@
-// test trading_chart
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:advanced_tinkoff_invest/utils/getDurationByInterval.dart';
-import 'package:http/http.dart' as http; // temporary
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -18,8 +16,28 @@ import 'package:yahoofin/yahoofin.dart';
 import 'package:yahoofin/src/models/stockQuote.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
+import 'package:advanced_tinkoff_invest/utils/getDurationByInterval.dart';
 
-import 'package:advanced_tinkoff_invest/widgets/candlesticksChart.dart';
+import 'package:advanced_tinkoff_invest/widgets/tabItem.dart';
+// import 'package:advanced_tinkoff_invest/widgets/candlesticksChart.dart';
+
+const List tabs = [
+  {
+    'label': 'График',
+    'name': 'chart',
+    'icon': Icons.insights,
+  },
+  {
+    'label': 'Стакан',
+    'name': 'orderbook',
+    'icon': Icons.stacked_bar_chart,
+  },
+  {
+    'label': 'Данные',
+    'name': 'desc',
+    'icon': Icons.description,
+  },
+];
 
 const intervals = [
   { 'label': '1 minute', 'key': CandleResolution.oneMin },
@@ -43,24 +61,27 @@ class InstrumentScreen extends StatefulWidget {
   _InstrumentScreenState createState() => _InstrumentScreenState();
 }
 
-class _InstrumentScreenState extends State<InstrumentScreen> {
+class _InstrumentScreenState extends State<InstrumentScreen> with TickerProviderStateMixin {
+  TabController? _controller;
   bool _loading = true;
   CandleResolution _selectedInterval = CandleResolution.oneMin;
-  late  List<Candle> _candles;
+  // late  List<Candle> _candles;
   List<KLineEntity>? _kLines = [];
   List<DepthEntity> _bids = [], _asks = [];
 
   @override
   void initState() {
     super.initState();
+    _controller = TabController(vsync: this, length: tabs.length);
     _initData();
   }
 
-  // @override
-  // void dispose() async {
-  //   super.dispose();
-  //   if (_unsubscribe != null) await _unsubscribe!();
-  // }
+  @override
+  void dispose() async {
+    super.dispose();
+    _controller!.dispose();
+    // if (_unsubscribe != null) await _unsubscribe!();
+  }
 
   void _initData() async {
     // final yfin = YahooFin();
@@ -128,7 +149,7 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
 
     DataUtil.calculate(kLines);
 
-    setState(() { _loading = false; _candles = candles.candles; _kLines = kLines; });
+    setState(() { _loading = false; /* _candles = candles.candles; */ _kLines = kLines; });
   }
 
   void _onTap(interval) {
@@ -138,87 +159,130 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
     _loadCandles(interval);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget renderChart() {
     final viewHeight = (
       MediaQuery.of(context).size.height
       - AppBar().preferredSize.height
       - MediaQuery.of(context).padding.top
-      // - 50 // margin from the bottom edge
+      - 47
     );
 
+    return (
+      Stack(children: <Widget>[
+        Container(
+          height: viewHeight,
+          child: Stack(children: <Widget>[
+            Container(
+              alignment: Alignment.center,
+              height: viewHeight - 200,
+              width: double.infinity,
+              child: _loading ? CircularProgressIndicator() : KChartWidget(
+                _kLines,
+                isLine: false,
+                mainState: MainState.BOLL,
+                secondaryState: SecondaryState.WR,
+                fixedLength: 2,
+                timeFormat: TimeFormat.YEAR_MONTH_DAY,
+                maDayList: [5,10,20],
+                bgColor: [Colors.black, Colors.black],
+                isChinese: false,
+              ),
+            ),
+
+            Positioned(
+              bottom: 110,
+              width: MediaQuery.of(context).size.width,
+              child: Container(
+                height: 80,
+                padding: EdgeInsets.only(top: 15),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    SizedBox(width: 10),
+                    Wrap(
+                      spacing: 10,
+                      children: intervals.map(
+                        (el) => InkWell(
+                          onTap: () => _onTap(el['key']),
+                          child: Chip(
+                            backgroundColor: _selectedInterval == el['key'] ? Colors.blueGrey : null,
+                            label: Text(el['label'] as String)
+                          ),
+                        )
+                      ).toList()
+                    ),
+                    SizedBox(width: 10),
+                  ]
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ])
+    );
+  }
+
+  Widget renderOrderbook() {
+    final viewHeight = (
+      MediaQuery.of(context).size.height
+      - AppBar().preferredSize.height
+      - MediaQuery.of(context).padding.top
+      - 47
+    );
+
+    return (
+      Container(
+        height: viewHeight - 200,
+        alignment: Alignment.center,
+        width: double.infinity,
+        color: Colors.black,
+        child: (
+          _loading
+            ? CircularProgressIndicator()
+            // : DepthChart(_bids, _asks)
+            : DepthChart([DepthEntity(200, 10), DepthEntity(210, 20)], [DepthEntity(100, 1), DepthEntity(105, 5)])
+        ),
+      )
+    );
+  }
+
+  Widget renderDesc() {
+    return (
+      Text('desc here')
+    );
+  }
+
+  Widget tabView(String name) {
+    currentWidget() {
+      switch (name) {
+        case 'chart': return renderChart();
+        case 'orderbook': return renderOrderbook();
+        case 'desc': return renderDesc();
+      }
+
+      return Text('unknown');
+    }
+
+    return ListView(children: [currentWidget()]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
        child: Scaffold(
-          appBar: AppBar(title: Text(widget.instrument?['name'])),
-          body: ListView(
-          children: <Widget>[
-            Stack(children: <Widget>[
-              Container(
-                height: viewHeight,
-                alignment: Alignment.center,
-                child: _loading ? CircularProgressIndicator() : Stack(children: <Widget>[
-                  Container(
-                    height: viewHeight - 50 - 60,
-                    width: double.infinity,
-                    child: KChartWidget(
-                      _kLines,
-                      isLine: false,
-                      mainState: MainState.BOLL,
-                      secondaryState: SecondaryState.WR,
-                      fixedLength: 2,
-                      timeFormat: TimeFormat.YEAR_MONTH_DAY,
-                      maDayList: [5,10,20],
-                      bgColor: [Colors.black, Colors.black],
-                      isChinese: false,
-                      // onLoadMore: (bool a) {},
-                      // isOnDrag: (isDrag){},
-                    ),
-                  ),
-
-                  Positioned(
-                    bottom: 50,
-                    width: MediaQuery.of(context).size.width,
-                    child: Container(
-                      height: 60,
-                      padding: EdgeInsets.only(top: 10),
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          SizedBox(width: 10),
-                          Wrap(
-                            spacing: 10,
-                            children: intervals.map(
-                              (el) => InkWell(
-                                onTap: () => _onTap(el['key']),
-                                child: Chip(
-                                  backgroundColor: _selectedInterval == el['key'] ? Colors.blueGrey : null,
-                                  label: Text(el['label'] as String)
-                                ),
-                              )
-                            ).toList()
-                          ),
-                          SizedBox(width: 10),
-                        ]
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
-
-              // Container(
-              //   height: 250,
-              //   alignment: Alignment.center,
-              //   width: double.infinity,
-              //   color: Colors.black,
-              //   child: (
-              //     _loading
-              //       ? CircularProgressIndicator()
-              //       : DepthChart(_bids, _asks)
-              //   ),
-              // ),
-            ]),
-          ],
-        ),
+          appBar: AppBar(
+            title: Text(widget.instrument?['name']),
+            bottom: TabBar(
+              controller: _controller,
+              indicatorWeight: 0.5,
+              tabs: tabs.map((t) => tabItem(t['label'], t['icon'])).toList(),
+            ),
+          ),
+          body: TabBarView(
+            controller: _controller,
+            // dragStartBehavior: DragStartBehavior.down,
+            children: tabs.map((t) => tabView(t['name'])).toList(),
+          ),
        ),
     );
   }
