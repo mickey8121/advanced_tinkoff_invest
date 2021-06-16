@@ -13,7 +13,7 @@ class OperationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = '${operation['operationType']}'.splitPascalCase().capitalize();
+    final type = '${operation['operationType'] ?? ''}'.splitPascalCase().capitalize();
     final instrumentType = '${operation['instrumentType']}'.splitPascalCase().capitalize();
     final currencySymbol = currencySymbols[operation['currency']];
     final payment = operation['payment'];
@@ -21,7 +21,11 @@ class OperationCard extends StatelessWidget {
     final instrumentName = instrument?['name'];
     final icon = instrumentIcons[instrumentType];
 
-    String operationDate = DateFormat('yMMMMd', 'en_US').format(DateTime.parse(operation['date']));
+    String operationDate = (
+      operation['date'] != null
+      ? DateFormat('yMMMMd', 'en_US').format(DateTime.parse(operation['date']))
+      : ''
+    );
 
     return Card(
       shape: RoundedRectangleBorder(

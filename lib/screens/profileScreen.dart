@@ -42,16 +42,14 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    // Map<String, dynamic>? operations = await context.read<API>().getAllOperations();
-    await context.read<API>().getAllOperations()
+  Future<void> _loadData({ noCache = false }) async {
+    setState(() => _loading = true);
+
+    await context.read<API>().getAllOperations(noCache: noCache)
       .then((val) => setState(() => _operationsList = val?['operations']))
       .catchError((err) => print(err));
 
-    setState(() {
-      _loading = false;
-      // _operationsList = operationsList;
-    });
+    setState(() => _loading = false);
   }
 
   Widget _tabItem(String label, IconData icon) {
@@ -83,8 +81,20 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               controller: _controller,
               dragStartBehavior: DragStartBehavior.down,
               children: [
-                UserOperations(operations: _operationsList as List),
-                UserIncomes(operations: _operationsList as List),
+                RefreshIndicator(
+                  edgeOffset: 5,
+                  displacement: 20,
+                  triggerMode: RefreshIndicatorTriggerMode.onEdge,
+                  onRefresh: () async => await _loadData(noCache: true),
+                  child: UserOperations(operations: _operationsList as List),
+                ),
+                RefreshIndicator(
+                  edgeOffset: 5,
+                  displacement: 20,
+                  triggerMode: RefreshIndicatorTriggerMode.onEdge,
+                  onRefresh: () async => await _loadData(noCache: true),
+                  child: UserIncomes(operations: _operationsList as List),
+                ),
               ],
             ) : null
       )

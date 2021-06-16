@@ -56,21 +56,19 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
     super.dispose();
   }
 
-  Future<void> _loadingCurrentInstruments() async {
-    if (_instrumentLists[_currentInstrumentType] == null) {
-      if (!_loading) setState(() => _loading = true);
+  Future<void> _loadingCurrentInstruments({ noCache = false }) async {
+    if (!_loading) setState(() => _loading = true);
 
-      final currentInstrumentList =
-        await context.read<API>().getInstrumentsList(_currentInstrumentType);
+    final currentInstrumentList =
+      await context.read<API>().getInstrumentsList(_currentInstrumentType, noCache: noCache);
 
-      setState(() {
-        _loading = false;
-        _instrumentLists = {
-          ..._instrumentLists,
-          _currentInstrumentType: currentInstrumentList!['instruments']
-        };
-      });
-    }
+    setState(() {
+      _loading = false;
+      _instrumentLists = {
+        ..._instrumentLists,
+        _currentInstrumentType: currentInstrumentList!['instruments']
+      };
+    });
   }
 
   _handleTabSelect() {
@@ -94,7 +92,10 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
       _loading
         ? Center(child: Text('Загрузка'))
         : RefreshIndicator(
-          onRefresh: () async => print('test'),
+          edgeOffset: 5,
+          displacement: 20,
+          triggerMode: RefreshIndicatorTriggerMode.onEdge,
+          onRefresh: () async => await _loadingCurrentInstruments(noCache: true),
           child: ListView.builder(
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
             itemCount: currentList?.length ?? 0,
