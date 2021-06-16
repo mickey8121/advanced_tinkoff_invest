@@ -12,7 +12,7 @@ class CandlesticksChart extends StatelessWidget {
       height: 300.0,
       child: (
         isLoading
-          ? Center(child: Text('Loading', style: Theme.of(context).textTheme.headline3))
+          ? Center(child: Text('Загрузка', style: Theme.of(context).textTheme.headline3))
           : (
             candles == null || candles.length == 0
               ? Center(child: Text('Candles is not found...', style: Theme.of(context).textTheme.headline5))

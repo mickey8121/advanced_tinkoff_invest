@@ -69,8 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Container(
         padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-        // child: Center(child: Text('Loading')),
-        child: _loading ? Center(child: Text('Loading', style: Theme.of(context).textTheme.headline3)) : Column(
+        child: _loading ? Center(child: Text('Загрузка', style: Theme.of(context).textTheme.headline3)) : Column(
           children: [
             // Accounts
             ...[

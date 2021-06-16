@@ -78,7 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       ),
       body: (
         _loading
-          ? Center(child: Text('Loading', style: Theme.of(context).textTheme.headline3))
+          ? Center(child: Text('Загрузка', style: Theme.of(context).textTheme.headline3))
           : _operationsList != null ? TabBarView(
               controller: _controller,
               dragStartBehavior: DragStartBehavior.down,
