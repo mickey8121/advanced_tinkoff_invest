@@ -1,3 +1,4 @@
+import 'package:advanced_tinkoff_invest/widgets/operationCard.dart';
 import 'package:flutter/material.dart';
 
 class IncomeDataScreen extends StatefulWidget {
@@ -14,10 +15,30 @@ class _IncomeDataScreenState extends State<IncomeDataScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(_incomeData);
+    final activePosition = _incomeData['instrument']?['activePosition'];
+    final List operations = _incomeData['operations'] ?? [];
 
-    return Container(
-       child: Text('Test'),
+    if (activePosition != null) {
+      activePosition['instrument'] = _incomeData['instrument'];
+      activePosition['operationType'] = 'В портфеле (${activePosition['lots']})';
+      activePosition['payment'] = activePosition['lots'] * activePosition['currentPrice'];
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Доход c ${_incomeData['instrument']['ticker']}')
+      ),
+      body: (
+        operations.length == 0
+          ? Text('Операции не найдены')
+          : ListView(
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            children: [
+              if (activePosition != null) OperationCard(operation: activePosition),
+              ...operations.map((o) => OperationCard(operation: o)).toList(),
+            ],
+          )
+      ),
     );
   }
 }
