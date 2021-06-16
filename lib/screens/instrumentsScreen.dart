@@ -92,11 +92,14 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
 
     return (
       _loading
-        ? Center(child: Text('Loading'))
-        : ListView.builder(
-          padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          itemCount: currentList?.length ?? 0,
-          itemBuilder: (context, index) => InstrumentCard(instrumentData: currentList![index]),
+        ? Center(child: Text('Загрузка'))
+        : RefreshIndicator(
+          onRefresh: () async => print('test'),
+          child: ListView.builder(
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            itemCount: currentList?.length ?? 0,
+            itemBuilder: (context, index) => InstrumentCard(instrumentData: currentList![index]),
+          ),
         )
     );
   }
