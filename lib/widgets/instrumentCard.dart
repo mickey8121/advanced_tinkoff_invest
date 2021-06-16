@@ -1,10 +1,8 @@
 import 'package:advanced_tinkoff_invest/models/api.dart';
 import 'package:advanced_tinkoff_invest/screens/instrumentScreen.dart';
-import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
+// import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// ignore: import_of_legacy_library_into_null_safe
-// import 'package:vibration/vibration.dart';
 
 class InstrumentCard extends StatefulWidget {
   final Map instrumentData;
@@ -106,10 +104,10 @@ class _InstrumentCardState extends State<InstrumentCard> {
 
               ...[
                 SizedBox(height: 10),
-                Container(
+                 Container(
                   height: 20,
                   child: Text(
-                    _isLoadingPrice ? 'price loading...' : '$price',
+                    _isLoadingPrice ? 'price loading...' : '${price != 0 ? price : ''}',
                     style: (
                       _isLoadingPrice
                         ? TextStyle(fontSize: 14)
@@ -124,7 +122,7 @@ class _InstrumentCardState extends State<InstrumentCard> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(width: 5),
-                  Text('Face Value:', style: TextStyle(fontSize: 16)),
+                  Text('Номинал:', style: TextStyle(fontSize: 16)),
                   SizedBox(width: 5),
                   Text(instrumentData['faceValue'].toString(), style: TextStyle(fontSize: 16, color: Colors.deepOrange)),
                   SizedBox(width: 1),

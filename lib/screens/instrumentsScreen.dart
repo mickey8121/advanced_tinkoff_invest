@@ -1,9 +1,11 @@
-import 'package:advanced_tinkoff_invest/widgets/instrumentCard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
+
+import 'package:advanced_tinkoff_invest/widgets/instrumentCard.dart';
+import 'package:advanced_tinkoff_invest/widgets/tabItem.dart';
 
 const List tabs = [
   {
@@ -21,11 +23,6 @@ const List tabs = [
     'instrumentType': 'etf',
     'icon': Icons.pie_chart_rounded,
   },
-  // {
-  //   'label': 'Currencies',
-  //   'instrumentType': 'currency',
-  //   'icon': Icons.pie_chart_rounded,
-  // },
 ];
 
 class InstrumentsScreen extends StatefulWidget {
@@ -90,16 +87,6 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
     _loadingCurrentInstruments();
   }
 
-  Widget _tabItem(String label, IconData icon) {
-    return Tab(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [Icon(icon), Text(label)],
-      )
-    );
-  }
-
   Widget _tabView(String instrumentType) {
     final List? currentList = _instrumentLists['$instrumentType'];
 
@@ -123,7 +110,7 @@ class IinstrumentsScreenState extends State<InstrumentsScreen> with TickerProvid
         bottom: TabBar(
           controller: _controller,
           indicatorWeight: 0.5,
-          tabs: tabs.map((t) => _tabItem(t['label'], t['icon'])).toList(),
+          tabs: tabs.map((t) => tabItem(t['label'], t['icon'])).toList(),
         ),
       ),
       body: TabBarView(

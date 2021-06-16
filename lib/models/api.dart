@@ -24,7 +24,8 @@ class API extends ChangeNotifier {
     final savedToken = localStorage.prefs.getString('userToken');
 
     if (savedToken != null) {
-      login(savedToken, true);
+      final sandboxMode = localStorage.prefs.getBool('sandboxMode');
+      login(savedToken, true, sandboxMode);
     }
   }
 
@@ -50,6 +51,7 @@ class API extends ChangeNotifier {
 
     if (portfolio is ValueResult) {
       if (saveToken) localStorage.prefs.setString('userToken', token);
+      localStorage.prefs.setBool('sandboxMode', sandboxMode);
 
       _api = tinkoffInvestApi;
       isAuthorized = true;

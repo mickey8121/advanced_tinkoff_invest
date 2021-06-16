@@ -1,13 +1,44 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
+import 'package:trading_chart/depth_chart.dart';
+import 'package:trading_chart/entity/depth_entity.dart';
+import 'package:trading_chart/entity/k_line_entity.dart';
+import 'package:trading_chart/k_chart_widget.dart';
+import 'package:trading_chart/utils/data_util.dart';
 import 'package:yahoofin/yahoofin.dart';
 // ignore: implementation_imports
 import 'package:yahoofin/src/models/stockQuote.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
+import 'package:advanced_tinkoff_invest/utils/getDurationByInterval.dart';
 
-import 'package:advanced_tinkoff_invest/widgets/candlesticksChart.dart';
+import 'package:advanced_tinkoff_invest/widgets/tabItem.dart';
+// import 'package:advanced_tinkoff_invest/widgets/candlesticksChart.dart';
+
+const List tabs = [
+  {
+    'label': 'График',
+    'name': 'chart',
+    'icon': Icons.insights,
+  },
+  {
+    'label': 'Стакан',
+    'name': 'orderbook',
+    'icon': Icons.stacked_bar_chart,
+  },
+  {
+    'label': 'Данные',
+    'name': 'desc',
+    'icon': Icons.description,
+  },
+];
 
 const intervals = [
   { 'label': '1 minute', 'key': CandleResolution.oneMin },
@@ -31,80 +62,81 @@ class InstrumentScreen extends StatefulWidget {
   _InstrumentScreenState createState() => _InstrumentScreenState();
 }
 
-class _InstrumentScreenState extends State<InstrumentScreen> {
+class _InstrumentScreenState extends State<InstrumentScreen> with TickerProviderStateMixin {
+  TabController? _controller;
   bool _loading = true;
   CandleResolution _selectedInterval = CandleResolution.oneMin;
-  Map<String, dynamic>? _orderbookData;
-  // Orderbook? _orderbook;
-  List<Candle>? _candles;
-  StockQuote? _instrumentData;
-  Function? _unsubscribe;
+  // late  List<Candle> _candles;
+  List<KLineEntity>? _kLines = [];
+  List<DepthEntity> _bids = [], _asks = [];
+  StockQuote? _stockData;
 
   @override
   void initState() {
     super.initState();
+    _controller = TabController(vsync: this, length: tabs.length);
     _initData();
   }
 
   @override
   void dispose() async {
     super.dispose();
-    if (_unsubscribe != null) await _unsubscribe!();
+    _controller!.dispose();
+    // if (_unsubscribe != null) await _unsubscribe!();
   }
 
   void _initData() async {
+    // final yfin = YahooFin();
+
+    // final figi = widget.instrument?['figi'];
+    // final ticker = widget.instrument?['ticker'];
+
+    await _loadInfo();
+    await _loadAsksAndBids();
+    await _loadCandles(_selectedInterval);
+
+    setState(() {
+      _loading = false;
+    });
+  }
+
+  Future<void> _loadInfo() async {
     final yfin = YahooFin();
 
-    final figi = widget.instrument?['figi'];
+    // final figi = widget.instrument?['figi'];
     final ticker = widget.instrument?['ticker'];
 
     StockInfo instrumentInfo = yfin.getStockInfo(ticker: ticker);
 
     try {
-      _instrumentData = await instrumentInfo.getStockData();
+      StockQuote stockData = await instrumentInfo.getStockData();
+      setState(() { _stockData = stockData; });
     } catch (e) {
       print(e);
     }
+  }
 
-    await _loadCandles(_selectedInterval);
+  Future<void> _loadAsksAndBids() async {
+    try {
+      final orderbook = await context.read<API>().getOrderbook(widget.instrument?['figi'], 20);
+      final asks = orderbook.asks
+        .map((ask) => DepthEntity(ask.price, ask.quantity.toDouble()))
+        .toList();
+      final bids = orderbook.bids
+        .map((bid) => DepthEntity(bid.price, bid.quantity.toDouble()))
+        .toList();
+      
+      bids.sort((elA, elB) => (elB.vol - elA.vol).toInt());
+      asks.sort((elA, elB) => (elA.vol - elB.vol).toInt());
 
-    final unsubscribe = context.read<API>().subscribeToOrderbook(
-      figi,
-      10,
-      (data) => setState(
-        () {
-          _orderbookData = {
-            'event': data.event,
-            'time': data.time,
-            'payload': data.payload,
-          };
-        }
-      ),
-    );
-
-    setState(() {
-      _loading = false;
-      _unsubscribe = unsubscribe;
-    });
+      setState(() { _bids = bids; _asks = asks; });
+    } catch (e) {
+      print('_loadOrderbook $e');
+    }
   }
 
   Future<void> _loadCandles(CandleResolution interval) async {
-    Duration duration = Duration(days: 1);
-
-    switch (interval) {
-      case CandleResolution.hour:
-        duration = Duration(days: 7);
-        break;
-      case CandleResolution.week:
-      case CandleResolution.day:
-        duration = Duration(days: 365);
-        break;
-      case CandleResolution.month:
-        duration = Duration(days: 365 * 5);
-        break;
-      default:
-        break;
-    }
+    final duration = durationByInterval(interval);
 
     final nowDate = DateTime.now();
     final fromDate = nowDate.subtract(duration);
@@ -118,7 +150,25 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
       interval: interval,
     );
 
-    setState(() { _loading = false; _candles = candles.candles; });
+    List<KLineEntity> kLines = candles.candles.map(
+      (candle) {
+        return KLineEntity.fromCustom(
+          amount: Random().nextInt(300).toDouble(),
+          ratio: 0.5,
+          change: 1,
+          open: candle.o,
+          close: candle.c,
+          high: candle.h,
+          low: candle.l,
+          vol: candle.v.toDouble(),
+          time: candle.time.millisecondsSinceEpoch,
+        );
+      }
+    ).toList();
+
+    DataUtil.calculate(kLines);
+
+    setState(() { _loading = false; /* _candles = candles.candles; */ _kLines = kLines; });
   }
 
   void _onTap(interval) {
@@ -128,23 +178,42 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
     _loadCandles(interval);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final double? currentPrice = _instrumentData?.currentPrice;
-    final double? fiftyDaysAverageChange = _instrumentData?.fiftyDayAverageChange;
+  Widget renderChart() {
+    final viewHeight = (
+      MediaQuery.of(context).size.height
+      - AppBar().preferredSize.height
+      - MediaQuery.of(context).padding.top
+      - 47
+    );
 
-    final String? regularMarketChange =
-      _instrumentData?.regularMarketChangePercent?.toStringAsFixed(3);
+    return (
+      Stack(children: <Widget>[
+        Container(
+          height: viewHeight,
+          child: Stack(children: <Widget>[
+            Container(
+              alignment: Alignment.center,
+              height: viewHeight - 200,
+              width: double.infinity,
+              child: _loading ? CircularProgressIndicator() : KChartWidget(
+                _kLines,
+                isLine: false,
+                mainState: MainState.BOLL,
+                secondaryState: SecondaryState.WR,
+                fixedLength: 2,
+                timeFormat: TimeFormat.YEAR_MONTH_DAY,
+                maDayList: [5,10,20],
+                bgColor: [Colors.black, Colors.black],
+                isChinese: false,
+              ),
+            ),
 
-    return Container(
-       child: Scaffold(
-          appBar: AppBar(title: Text(widget.instrument?['name'])),
-          body: Column(
-            children: [
-              CandlesticksChart(candles: _candles as List, isLoading: _loading),
-              Container(
-                height: 60,
-                padding: EdgeInsets.only(top: 10),
+            Positioned(
+              bottom: 110,
+              width: MediaQuery.of(context).size.width,
+              child: Container(
+                height: 80,
+                padding: EdgeInsets.only(top: 15),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
@@ -165,43 +234,128 @@ class _InstrumentScreenState extends State<InstrumentScreen> {
                   ]
                 ),
               ),
-              _loading ? Text('Loading') : Container(
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Text('Current Price:'),
-                        SizedBox(width: 20,),
-                        Text(currentPrice != null ? '$currentPrice\$' : 'unknown'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text('Regular Market Change:'),
-                        SizedBox(width: 20,),
-                        Text(regularMarketChange != null ? '$regularMarketChange%' : 'unknown'),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text('50 Days Average Change:'),
-                        SizedBox(width: 20,),
-                        Text(fiftyDaysAverageChange != null ? '$fiftyDaysAverageChange\$' : 'unknown'),
-                      ],
-                    ),
-                    SizedBox(height: 30,),
-                    Row(
-                      children: _orderbookData != null ? [
-                        // Text('${_orderbookData!['time']}'),
-                        Flexible(
-                          child: Text('${_orderbookData!['payload']}'),
-                        ),
-                      ] : [],
-                    )
-                  ],
-                ),
-              )
-            ],
+            ),
+          ]),
+        ),
+      ])
+    );
+  }
+
+  Widget renderOrderbook() {
+    final viewHeight = (
+      MediaQuery.of(context).size.height
+      - AppBar().preferredSize.height
+      - MediaQuery.of(context).padding.top
+      - 47
+    );
+
+    return (
+      Container(
+        height: viewHeight - 200,
+        alignment: Alignment.center,
+        width: double.infinity,
+        color: Colors.black,
+        child: (
+          _loading
+            ? CircularProgressIndicator()
+            : DepthChart(_bids, _asks)
+        ),
+      )
+    );
+  }
+
+  Widget renderDesc() {
+    final viewHeight = (
+      MediaQuery.of(context).size.height
+      - AppBar().preferredSize.height
+      - MediaQuery.of(context).padding.top
+      - 47
+    );
+
+    return (
+      Container(
+        padding: EdgeInsets.all(20),
+        constraints: BoxConstraints(minHeight: viewHeight),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Текущая цена'),
+                Text(_stockData?.currentPrice?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Дневной максимум'),
+                Text(_stockData?.dayHigh?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Дневной минимум'),
+                Text(_stockData?.dayLow?.toString() ?? 'нет данных')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('fiftyDayAverageChange'),
+                Text('${_stockData?.fiftyDayAverageChange ?? '-'}%')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('regularMarketChange'),
+                Text('${_stockData?.regularMarketChange ?? '-'}%')
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('averageDailyVolume10Day'),
+                Text('${_stockData?.averageDailyVolume10Day ?? '-'}')
+              ],
+            ),
+          ],
+        ),
+      )
+    );
+  }
+
+  Widget tabView(String name) {
+    currentWidget() {
+      switch (name) {
+        case 'chart': return renderChart();
+        case 'orderbook': return renderOrderbook();
+        case 'desc': return renderDesc();
+      }
+
+      return Text('unknown');
+    }
+
+    return ListView(children: [currentWidget()]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+       child: Scaffold(
+          appBar: AppBar(
+            title: Text(widget.instrument?['name']),
+            bottom: TabBar(
+              controller: _controller,
+              indicatorWeight: 0.5,
+              tabs: tabs.map((t) => tabItem(t['label'], t['icon'])).toList(),
+            ),
+          ),
+          body: TabBarView(
+            controller: _controller,
+            // dragStartBehavior: DragStartBehavior.down,
+            children: tabs.map((t) => tabView(t['name'])).toList(),
           ),
        ),
     );
