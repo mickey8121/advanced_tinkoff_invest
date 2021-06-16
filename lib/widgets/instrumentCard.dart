@@ -4,7 +4,7 @@ import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // ignore: import_of_legacy_library_into_null_safe
-import 'package:vibration/vibration.dart';
+// import 'package:vibration/vibration.dart';
 
 class InstrumentCard extends StatefulWidget {
   final Map instrumentData;
@@ -89,8 +89,8 @@ class _InstrumentCardState extends State<InstrumentCard> {
         splashColor: Colors.blueGrey[100],
         highlightColor: Colors.transparent,
         onTap: () async {
-          if (await Vibration.hasAmplitudeControl())
-            Vibration.vibrate(pattern: [0, 100], intensities: [0, 50]);
+          // if (await Vibration.hasAmplitudeControl())
+          //   Vibration.vibrate(pattern: [0, 100], intensities: [0, 50]);
 
           Navigator.push(context, MaterialPageRoute(builder: (context) => InstrumentScreen(instrument: instrumentData)));
         },
