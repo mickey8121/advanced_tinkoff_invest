@@ -7,7 +7,6 @@ import 'package:advanced_tinkoff_invest/models/api.dart';
 import 'package:advanced_tinkoff_invest/widgets/userIncomes.dart';
 import 'package:advanced_tinkoff_invest/widgets/userOperations.dart';
 
-// TODO doesn't work rus lang
 final List tabs = [
   {
     'label': 'Операции',

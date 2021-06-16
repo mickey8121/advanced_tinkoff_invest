@@ -1,8 +1,9 @@
 
+import 'package:advanced_tinkoff_invest/screens/incomeDataScreen.dart';
 import 'package:advanced_tinkoff_invest/utils/currencySymbols.dart';
 import 'package:flutter/material.dart';
 // ignore: import_of_legacy_library_into_null_safe
-import 'package:vibration/vibration.dart';
+// import 'package:vibration/vibration.dart';
 
 class IncomeCard extends StatelessWidget {
   final Map incomeData;
@@ -30,12 +31,8 @@ class IncomeCard extends StatelessWidget {
           hoverColor: Colors.transparent,
           splashColor: Colors.blueGrey[100],
           highlightColor: Colors.transparent,
-          onTap: () async {
-            if (await Vibration.hasAmplitudeControl())
-              Vibration.vibrate(pattern: [0, 100], intensities: [0, 50]);
-
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => InstrumentScreen(instrument: instrumentData)));
-          },
+          onTap: () =>
+            Navigator.push(context, MaterialPageRoute(builder: (context) => IncomeDataScreen(incomeData: incomeData))),
           child: Container(
             color: Colors.transparent,
             padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
