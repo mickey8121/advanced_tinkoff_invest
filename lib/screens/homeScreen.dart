@@ -1,3 +1,4 @@
+import 'package:advanced_tinkoff_invest/widgets/positionCard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
@@ -68,55 +69,64 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-        child: _loading ? Center(child: Text('Загрузка', style: Theme.of(context).textTheme.headline3)) : Column(
-          children: [
-            // Accounts
-            ...[
-              Text('Accounts', style: Theme.of(context).textTheme.headline5),
-              SizedBox(height: 10),
-              ..._userAccounts?.accounts.map(
-                (acc) => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(acc.brokerAccountId),
-                    Text(acc.brokerAccountType.name),
-                  ],
-                ),
-              ).toList() ?? []
-            ],
-
-            // Positions
-            SizedBox(height: 50),
-            Text('Positions', style: Theme.of(context).textTheme.headline5),
-            SizedBox(height: 10),
-            ..._portfolio!['positions'].map(
-              (item) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(item['name']),
-                  Text('${item['ticker']}'),
-                  Text('${item['balance']}'),
-                  Text('${item['lots']}'),
-                ],
+        child: (
+          _loading
+            ? Center(child: Text('Загрузка'))
+            : ListView(
+                padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                children: ((_portfolio!['positions'] ?? []) as List).map(
+                  (item) => PositionCard(position: item)
+                ).toList(),
               )
-            ).toList() ?? [],
-            SizedBox(height: 50),
-            Center(
-              child: TextButton(
-                onPressed: _clearCache,
-                child: Text('Clear cache'),
-              ),
-            ),
-            SizedBox(height: 50),
-            Center(
-              child: TextButton(
-                onPressed: context.read<API>().logout,
-                child: Text('Logout'),
-              ),
-            ),
-          ],
-        )
+        ),
+            // Accounts
+            // ...[
+            //   Text('Accounts', style: Theme.of(context).textTheme.headline5),
+            //   SizedBox(height: 10),
+            //   ..._userAccounts?.accounts.map(
+            //     (acc) => Row(
+            //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //       children: [
+            //         Text(acc.brokerAccountId),
+            //         Text(acc.brokerAccountType.name),
+            //       ],
+            //     ),
+            //   ).toList() ?? []
+            // ],
+
+            // // Positions
+            // SizedBox(height: 50),
+            // Text('Positions', style: Theme.of(context).textTheme.headline5),
+            // SizedBox(height: 10),
+            
+            // ListView(
+            //   children: ((_portfolio!['positions'] ?? []) as List).map(
+            //     (item) => item != null ?  Row(
+            //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //       children: [
+            //         Text(item['name']),
+            //         Text('${item['ticker']}'),
+            //         Text('${item['balance']}'),
+            //         Text('${item['lots']}'),
+            //       ],
+            //     ) : Text('Нет позиций')
+            //   ).toList(),
+            // ),
+
+            // SizedBox(height: 50),
+            // Center(
+            //   child: TextButton(
+            //     onPressed: _clearCache,
+            //     child: Text('Clear cache'),
+            //   ),
+            // ),
+            // SizedBox(height: 50),
+            // Center(
+            //   child: TextButton(
+            //     onPressed: context.read<API>().logout,
+            //     child: Text('Logout'),
+            //   ),
+            // ),
       ),
     );
 
