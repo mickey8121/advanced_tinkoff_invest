@@ -24,10 +24,23 @@ const Map<String, String> operationLocale = {
   // 'securityOut': '',
 };
 
+const Map<String, String> instrumentTypeLocale = {
+  'stock': 'акция',
+  'currency': 'валюта',
+  'bond': 'облигация',
+  // 'etf': 'фонд',
+};
+
 String translateOperationType(String operationTypeName) {
   final operationType = operationTypeName.toLowerCase();
   final operationTypeRus = operationLocale[operationType];
 
-  if (operationTypeRus != null) return  operationTypeRus.splitPascalCase().capitalize();
-  return operationType.splitPascalCase().capitalize();
+  return (operationTypeRus ?? operationType).splitPascalCase().capitalize();
+}
+
+String translateInstrumentType(String instrumentTypeName) {
+  final instrumentType = instrumentTypeName.toLowerCase();
+  final instrumentTypeRus = instrumentTypeLocale[instrumentType];
+
+  return (instrumentTypeRus ?? instrumentType).splitPascalCase().capitalize();
 }
