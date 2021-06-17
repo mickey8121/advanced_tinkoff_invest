@@ -1,26 +1,26 @@
-import 'dart:convert';
 import 'dart:math';
-
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:tinkoff_invest/tinkoff_invest.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:trading_chart/depth_chart.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:trading_chart/entity/depth_entity.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:trading_chart/entity/k_line_entity.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:trading_chart/k_chart_widget.dart';
+// ignore: import_of_legacy_library_into_null_safe
 import 'package:trading_chart/utils/data_util.dart';
-import 'package:yahoofin/yahoofin.dart';
 // ignore: implementation_imports
 import 'package:yahoofin/src/models/stockQuote.dart';
+import 'package:yahoofin/yahoofin.dart';
 
 import 'package:advanced_tinkoff_invest/models/api.dart';
-import 'package:advanced_tinkoff_invest/utils/getDurationByInterval.dart';
+import 'package:advanced_tinkoff_invest/utils/durationByInterval.dart';
 
 import 'package:advanced_tinkoff_invest/widgets/tabItem.dart';
-// import 'package:advanced_tinkoff_invest/widgets/candlesticksChart.dart';
 
 const List tabs = [
   {
@@ -54,6 +54,35 @@ const intervals = [
   { 'label': 'Month', 'key': CandleResolution.month },
 ];
 
+// const intervals = [
+//   { 'label': '1 minute', 'key': StreamingCandleInterval.oneMin },
+//   { 'label': '2 minutes', 'key': StreamingCandleInterval.twoMin },
+//   { 'label': '3 minutes', 'key': StreamingCandleInterval.threeMin },
+//   { 'label': '5 minutes', 'key': StreamingCandleInterval.fiveMin },
+//   { 'label': '10 minutes', 'key': StreamingCandleInterval.tenMin },
+//   { 'label': '15 minutes', 'key': StreamingCandleInterval.fifteenMin },
+//   { 'label': '30 minutes', 'key': StreamingCandleInterval.thirtyMin },
+//   { 'label': '1 hour', 'key': StreamingCandleInterval.hour },
+//   { 'label': '1 Day', 'key': StreamingCandleInterval.day },
+//   { 'label': 'Week', 'key': StreamingCandleInterval.week },
+//   { 'label': 'Month', 'key': StreamingCandleInterval.month },
+// ];
+
+ List<KLineEntity> candlesToKLines(List<dynamic> candles) =>
+  candles.map(
+    (candle) {
+      return KLineEntity.fromCustom(
+        amount: Random().nextInt(300).toDouble(),
+        open: candle.o,
+        close: candle.c,
+        high: candle.h,
+        low: candle.l,
+        vol: candle.v.toDouble(),
+        time: candle.time.millisecondsSinceEpoch,
+      );
+    }
+  ).toList();
+
 class InstrumentScreen extends StatefulWidget {
   final Map? instrument;
   InstrumentScreen({ Key? key, @required this.instrument }) : super(key: key);
@@ -64,17 +93,24 @@ class InstrumentScreen extends StatefulWidget {
 
 class _InstrumentScreenState extends State<InstrumentScreen> with TickerProviderStateMixin {
   TabController? _controller;
-  bool _loading = true;
   CandleResolution _selectedInterval = CandleResolution.oneMin;
-  // late  List<Candle> _candles;
   List<KLineEntity>? _kLines = [];
   List<DepthEntity> _bids = [], _asks = [];
   StockQuote? _stockData;
+  bool _loading = true;
+
+  double get viewHeight => (
+    MediaQuery.of(context).size.height
+    - AppBar().preferredSize.height
+    - MediaQuery.of(context).padding.top
+    - 47
+  );
 
   @override
   void initState() {
     super.initState();
-    _controller = TabController(vsync: this, length: tabs.length);
+
+    _controller = TabController(vsync: this, length: tabs.length);    
     _initData();
   }
 
@@ -82,15 +118,9 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
   void dispose() async {
     super.dispose();
     _controller!.dispose();
-    // if (_unsubscribe != null) await _unsubscribe!();
   }
 
   void _initData() async {
-    // final yfin = YahooFin();
-
-    // final figi = widget.instrument?['figi'];
-    // final ticker = widget.instrument?['ticker'];
-
     await _loadInfo();
     await _loadAsksAndBids();
     await _loadCandles(_selectedInterval);
@@ -102,8 +132,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
 
   Future<void> _loadInfo() async {
     final yfin = YahooFin();
-
-    // final figi = widget.instrument?['figi'];
     final ticker = widget.instrument?['ticker'];
 
     StockInfo instrumentInfo = yfin.getStockInfo(ticker: ticker);
@@ -137,6 +165,10 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
 
   Future<void> _loadCandles(CandleResolution interval) async {
     final duration = durationByInterval(interval);
+    // final intervalAsCandleResolution = CandleResolution.values.firstWhere(
+    //   (val) => val.name == interval.name,
+    //   orElse: () => CandleResolution.oneMin,
+    // );
 
     final nowDate = DateTime.now();
     final fromDate = nowDate.subtract(duration);
@@ -150,25 +182,29 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
       interval: interval,
     );
 
-    List<KLineEntity> kLines = candles.candles.map(
-      (candle) {
-        return KLineEntity.fromCustom(
-          amount: Random().nextInt(300).toDouble(),
-          ratio: 0.5,
-          change: 1,
-          open: candle.o,
-          close: candle.c,
-          high: candle.h,
-          low: candle.l,
-          vol: candle.v.toDouble(),
-          time: candle.time.millisecondsSinceEpoch,
-        );
-      }
-    ).toList();
+    // void candleSubscriptionListener(data) {
+    //   final StreamingCandle candle = data.payload;
+    //   List<KLineEntity> newKLines = candlesToKLines([candle]);
 
+    //   setState(() {
+    //     _kLines = [..._kLines ?? [], ...newKLines];
+    //   });
+    // }
+
+    // if (_unsubscribeToCandle != null) await _unsubscribeToCandle!();
+    // final unsubscribeToCandle = await context.read<API>().subscribeToCandle(
+    //   figi: widget.instrument?['figi'],
+    //   interval: interval,
+    //   listener: candleSubscriptionListener,
+    // );
+
+    List<KLineEntity> kLines = candlesToKLines(candles.candles);
     DataUtil.calculate(kLines);
 
-    setState(() { _loading = false; /* _candles = candles.candles; */ _kLines = kLines; });
+    setState(() {
+      _loading = false;
+      _kLines = kLines;
+    });
   }
 
   void _onTap(interval) {
@@ -179,13 +215,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
   }
 
   Widget renderChart() {
-    final viewHeight = (
-      MediaQuery.of(context).size.height
-      - AppBar().preferredSize.height
-      - MediaQuery.of(context).padding.top
-      - 47
-    );
-
     return (
       Stack(children: <Widget>[
         Container(
@@ -224,7 +253,8 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
                         (el) => InkWell(
                           onTap: () => _onTap(el['key']),
                           child: Chip(
-                            backgroundColor: _selectedInterval == el['key'] ? Colors.blueGrey : null,
+                            backgroundColor:
+                              _selectedInterval == el['key'] ? Colors.blueGrey : null,
                             label: Text(el['label'] as String)
                           ),
                         )
@@ -242,13 +272,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
   }
 
   Widget renderOrderbook() {
-    final viewHeight = (
-      MediaQuery.of(context).size.height
-      - AppBar().preferredSize.height
-      - MediaQuery.of(context).padding.top
-      - 47
-    );
-
     return (
       Container(
         height: viewHeight - 200,
@@ -265,13 +288,6 @@ class _InstrumentScreenState extends State<InstrumentScreen> with TickerProvider
   }
 
   Widget renderDesc() {
-    final viewHeight = (
-      MediaQuery.of(context).size.height
-      - AppBar().preferredSize.height
-      - MediaQuery.of(context).padding.top
-      - 47
-    );
-
     return (
       Container(
         padding: EdgeInsets.all(20),
